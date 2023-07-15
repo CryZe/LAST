@@ -2,7 +2,7 @@ BIN = $(BIN_DIR)/LAST
 
 INC = -I/usr/include/curl -I/usr/include/lua5.* `pkg-config --cflags gtk+-3.0 x11 jansson`
 CFLAGS = -O2 -pthread -Wall -Wno-unused-parameter
-LDFLAGS = -llua -lcurl -lstdc++fs `pkg-config --libs gtk+-3.0 x11 jansson`
+LDFLAGS = -L. -lasr -llua -lcurl -lstdc++fs `pkg-config --libs gtk+-3.0 x11 jansson`
 
 SRC_DIR = ./src
 BIN_DIR = ./bin
@@ -24,11 +24,14 @@ ICON = last
 ICON_DIR = /usr/share/icons/hicolor
 SCHEMAS_DIR = /usr/share/glib-2.0/schemas
 
-all: last-css.h $(BIN)
+all: last-css.h libasr.a $(BIN)
+
+libasr.a: asr/src/lib.rs
+	(cd asr && cargo build --release && cp target/release/libasr.a ../.)
 
 # Rule to link object files to create executable
 $(BIN): $(OBJECTS) | $(BIN_DIR)
-	g++ -std=c++17 $(CFLAGS) $(LDFLAGS) -o $@ $^
+	g++ -std=c++17 $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Rule to compile C++ source files to object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)

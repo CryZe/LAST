@@ -15,6 +15,7 @@
 #include "headers/autosplitter.h"
 #include "headers/downloader.hpp"
 #include "headers/readmem.hpp"
+#include "asr.h"
 
 using std::string;
 using std::cout;
@@ -66,193 +67,165 @@ void checkDirectories()
     }
 }
 
-void startup(lua_State* L)
-{
-    lua_getglobal(L, "startup");
-    lua_pcall(L, 0, 0, 0);
+// void startup(lua_State* L)
+// {
+//     lua_getglobal(L, "startup");
+//     lua_pcall(L, 0, 0, 0);
 
-    lua_getglobal(L, "refreshRate");
-    bool refreshRateExists = lua_isnumber(L, -1);
-    lua_pop(L, 1); // Remove 'refreshRate' from the stack
+//     lua_getglobal(L, "refreshRate");
+//     bool refreshRateExists = lua_isnumber(L, -1);
+//     lua_pop(L, 1); // Remove 'refreshRate' from the stack
 
-    if (refreshRateExists)
-    {
-        lua_getglobal(L, "refreshRate");
-        refreshRate = lua_tointeger(L, -1);
-        lua_pop(L, 1); // Remove 'refreshRate' from the stack
-    }
+//     if (refreshRateExists)
+//     {
+//         lua_getglobal(L, "refreshRate");
+//         refreshRate = lua_tointeger(L, -1);
+//         lua_pop(L, 1); // Remove 'refreshRate' from the stack
+//     }
+// }
+
+// void state(lua_State* L)
+// {
+//     lua_getglobal(L, "state");
+//     lua_pcall(L, 0, 0, 0);
+// }
+
+// void update(lua_State* L)
+// {
+//     lua_getglobal(L, "update");
+//     lua_pcall(L, 0, 0, 0);
+// }
+
+// void start(lua_State* L)
+// {
+//     // lua_getglobal(L, "start");
+//     // lua_pcall(L, 0, 1, 0);
+//     // if (lua_toboolean(L, -1))
+//     // {
+//         callStart.store(true);
+//     // }
+//     // lua_pop(L, 1); // Remove the return value from the stack
+// }
+
+// void split(lua_State* L)
+// {
+//     lua_getglobal(L, "split");
+//     lua_pcall(L, 0, 1, 0);
+//     if (lua_toboolean(L, -1))
+//     {
+//         callSplit.store(true);
+//     }
+//     lua_pop(L, 1); // Remove the return value from the stack
+// }
+
+// void isLoading(lua_State* L)
+// {
+//     lua_getglobal(L, "isLoading");
+//     lua_pcall(L, 0, 1, 0);
+//     if (lua_toboolean(L, -1) != prevIsLoading)
+//     {
+//         toggleLoading.store(true);
+//         prevIsLoading = !prevIsLoading;
+//     }
+//     else if (!lua_toboolean(L, -1) == prevIsLoading)
+//     {
+//         toggleLoading.store(true);
+//         prevIsLoading = !prevIsLoading;
+//     }
+//     lua_pop(L, 1); // Remove the return value from the stack
+// }
+
+// void reset(lua_State* L)
+// {
+//     lua_getglobal(L, "reset");
+//     lua_pcall(L, 0, 1, 0);
+//     if (lua_toboolean(L, -1))
+//     {
+//         callReset.store(true);
+//     }
+//     lua_pop(L, 1); // Remove the return value from the stack
+// }
+
+extern "C" int32_t state(void*) {
+    return 0;
 }
 
-void state(lua_State* L)
-{
-    lua_getglobal(L, "state");
-    lua_pcall(L, 0, 0, 0);
+extern "C" void start(void*) {
+    callStart.store(true);
 }
 
-void update(lua_State* L)
-{
-    lua_getglobal(L, "update");
-    lua_pcall(L, 0, 0, 0);
+extern "C" void split(void*) {
+    callSplit.store(true);
 }
 
-void start(lua_State* L)
-{
-    lua_getglobal(L, "start");
-    lua_pcall(L, 0, 1, 0);
-    if (lua_toboolean(L, -1))
-    {
-        callStart.store(true);
-    }
-    lua_pop(L, 1); // Remove the return value from the stack
+extern "C" void skip_split(void*) {
+
 }
 
-void split(lua_State* L)
-{
-    lua_getglobal(L, "split");
-    lua_pcall(L, 0, 1, 0);
-    if (lua_toboolean(L, -1))
-    {
-        callSplit.store(true);
-    }
-    lua_pop(L, 1); // Remove the return value from the stack
+extern "C" void undo_split(void*) {
+
 }
 
-void isLoading(lua_State* L)
-{
-    lua_getglobal(L, "isLoading");
-    lua_pcall(L, 0, 1, 0);
-    if (lua_toboolean(L, -1) != prevIsLoading)
-    {
-        toggleLoading.store(true);
-        prevIsLoading = !prevIsLoading;
-    }
-    else if (!lua_toboolean(L, -1) == prevIsLoading)
-    {
-        toggleLoading.store(true);
-        prevIsLoading = !prevIsLoading;
-    }
-    lua_pop(L, 1); // Remove the return value from the stack
+extern "C" void reset(void*) {
+    callReset.store(true);
 }
 
-void reset(lua_State* L)
-{
-    lua_getglobal(L, "reset");
-    lua_pcall(L, 0, 1, 0);
-    if (lua_toboolean(L, -1))
-    {
-        callReset.store(true);
-    }
-    lua_pop(L, 1); // Remove the return value from the stack
+extern "C" void set_game_time(void*, int64_t) {
+
+}
+
+extern "C" void pause_game_time(void*) {
+
+}
+
+extern "C" void resume_game_time(void*) {
+
+}
+
+extern "C" void asr_log(void*, const char* message) {
+    cout << "[Auto Splitter] " << message << endl;
 }
 
 void runAutoSplitter()
 {
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    lua_pushcfunction(L, findProcessID);
-    lua_setglobal(L, "process");
-    lua_pushcfunction(L, readAddress);
-    lua_setglobal(L, "readAddress");
+    auto settings_store = SettingsStore_new();
+    auto runtime = Runtime_new(
+        autoSplitterFile,
+        settings_store,
+        nullptr,
+        state,
+        start,
+        split,
+        skip_split,
+        undo_split,
+        reset,
+        set_game_time,
+        pause_game_time,
+        resume_game_time,
+        asr_log
+    );
+    if (runtime == nullptr) {
+        throw std::runtime_error("Runtime couldn't be created");
+    }
+
     string currentAutoSplitterFile = autoSplitterFile;
-
-    // Load the Lua file
-    if (luaL_loadfile(L, autoSplitterFile) != LUA_OK)
-    {
-        // Error loading the file
-        const char* errorMsg = lua_tostring(L, -1);
-        lua_pop(L, 1); // Remove the error message from the stack
-        throw std::runtime_error("Lua syntax error: " + std::string(errorMsg));
-    }
-
-    // Execute the Lua file
-    if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK)
-    {
-        // Error executing the file
-        const char* errorMsg = lua_tostring(L, -1);
-        lua_pop(L, 1); // Remove the error message from the stack
-        throw std::runtime_error("Lua runtime error: " + std::string(errorMsg));
-    }
-
-    lua_getglobal(L, "state");
-    bool stateExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'state' from the stack
-    
-    lua_getglobal(L, "start");
-    bool startExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'start' from the stack
-    
-    lua_getglobal(L, "split");
-    bool splitExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'split' from the stack
-
-    lua_getglobal(L, "isLoading");
-    bool isLoadingExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'isLoading' from the stack
-
-    lua_getglobal(L, "startup");
-    bool startupExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'startup' from the stack
-
-    lua_getglobal(L, "reset");
-    bool resetExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'reset' from the stack
-
-    lua_getglobal(L, "update");
-    bool updateExists = lua_isfunction(L, -1);
-    lua_pop(L, 1); // Remove 'update' from the stack
-
-    if (startupExists)
-    {
-        startup(L);
-    }
-
-    if (stateExists)
-    {
-        state(L);
-    }
-
-    cout << "Refresh rate: " << to_string(refreshRate) << endl;
-    int rate = static_cast<int>(1000000 / refreshRate);
 
     while (true)
     {
         auto clockStart = high_resolution_clock::now();
 
-        if (!usingAutoSplitter.load() || currentAutoSplitterFile != autoSplitterFile || !processExists() || pid == 0)
+        if (!usingAutoSplitter.load() || currentAutoSplitterFile != autoSplitterFile)
         {
+            cout << "Stop running the auto splitter." << endl;
             break;
         }
 
-        if (stateExists)
-        {
-            state(L);
+        if (!Runtime_step(runtime)) {
+            cout << "The auto splitter trapped." << endl;
+            break;
         }
 
-        if (updateExists)
-        {
-            update(L);
-        }
-            
-        if (startExists)
-        {
-            start(L);
-        }
-
-        if (splitExists)
-        {
-            split(L);
-        }
-
-        if (isLoadingExists)
-        {
-            isLoading(L);
-        }
-
-        if (resetExists)
-        {
-            reset(L);
-        }
-
+        auto rate = static_cast<int64_t>(Runtime_tick_rate(runtime));
         auto clockEnd = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(clockEnd - clockStart).count();
         if (duration < rate)
@@ -260,8 +233,124 @@ void runAutoSplitter()
             sleep_for(microseconds(rate - duration));
         }
     }
-    
-    lua_close(L);
+
+    Runtime_drop(runtime);
+
+    // lua_State* L = luaL_newstate();
+    // luaL_openlibs(L);
+    // lua_pushcfunction(L, findProcessID);
+    // lua_setglobal(L, "process");
+    // lua_pushcfunction(L, readAddress);
+    // lua_setglobal(L, "readAddress");
+    // string currentAutoSplitterFile = autoSplitterFile;
+
+    // // Load the Lua file
+    // if (luaL_loadfile(L, autoSplitterFile) != LUA_OK)
+    // {
+    //     // Error loading the file
+    //     const char* errorMsg = lua_tostring(L, -1);
+    //     lua_pop(L, 1); // Remove the error message from the stack
+    //     throw std::runtime_error("Lua syntax error: " + std::string(errorMsg));
+    // }
+
+    // // Execute the Lua file
+    // if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK)
+    // {
+    //     // Error executing the file
+    //     const char* errorMsg = lua_tostring(L, -1);
+    //     lua_pop(L, 1); // Remove the error message from the stack
+    //     throw std::runtime_error("Lua runtime error: " + std::string(errorMsg));
+    // }
+
+    // lua_getglobal(L, "state");
+    // bool stateExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'state' from the stack
+
+    // lua_getglobal(L, "start");
+    // bool startExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'start' from the stack
+
+    // lua_getglobal(L, "split");
+    // bool splitExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'split' from the stack
+
+    // lua_getglobal(L, "isLoading");
+    // bool isLoadingExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'isLoading' from the stack
+
+    // lua_getglobal(L, "startup");
+    // bool startupExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'startup' from the stack
+
+    // lua_getglobal(L, "reset");
+    // bool resetExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'reset' from the stack
+
+    // lua_getglobal(L, "update");
+    // bool updateExists = lua_isfunction(L, -1);
+    // lua_pop(L, 1); // Remove 'update' from the stack
+
+    // if (startupExists)
+    // {
+    //     startup(L);
+    // }
+
+    // if (stateExists)
+    // {
+    //     state(L);
+    // }
+
+    // cout << "Refresh rate: " << to_string(refreshRate) << endl;
+    // int rate = static_cast<int>(1000000 / refreshRate);
+
+    // while (true)
+    // {
+    //     auto clockStart = high_resolution_clock::now();
+
+    //     if (!usingAutoSplitter.load() || currentAutoSplitterFile != autoSplitterFile || !processExists() || pid == 0)
+    //     {
+    //         break;
+    //     }
+
+    //     if (stateExists)
+    //     {
+    //         state(L);
+    //     }
+
+    //     if (updateExists)
+    //     {
+    //         update(L);
+    //     }
+
+    //     if (startExists)
+    //     {
+    //         start(L);
+    //     }
+
+    //     if (splitExists)
+    //     {
+    //         split(L);
+    //     }
+
+    //     if (isLoadingExists)
+    //     {
+    //         isLoading(L);
+    //     }
+
+    //     if (resetExists)
+    //     {
+    //         reset(L);
+    //     }
+
+    //     auto clockEnd = high_resolution_clock::now();
+    //     auto duration = duration_cast<microseconds>(clockEnd - clockStart).count();
+    //     if (duration < rate)
+    //     {
+    //         sleep_for(microseconds(rate - duration));
+    //     }
+    // }
+
+    // lua_close(L);
 }
 
 void openAutoSplitter()
